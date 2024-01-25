@@ -45,6 +45,7 @@ puts "EventManager initalized"
 
 numbers_for_alerts = []
 registers_per_hour = {}
+registers_per_weekday = {}
 
 if File.exist? "event_attendees.csv"
   contents = CSV.open("event_attendees.csv", headers: true, header_converters: :symbol)
@@ -54,16 +55,19 @@ if File.exist? "event_attendees.csv"
     id = row[0]
     name = row[:first_name]
     zipcode = clean_zipcodes(row[:zipcode])
-    # legislators = legislators_by_zipcode(zipcode)
-    # results = template.result(binding)
-    # save_thank_you_letter(id, results)
+    legislators = legislators_by_zipcode(zipcode)
+    results = template.result(binding)
+    save_thank_you_letter(id, results)
     phone = clean_phone_number(row[:homephone])
     numbers_for_alerts.push(phone) unless phone == "Invalid Phone Number"
-    time = Time.strptime(row[:regdate], "%m/%d/%Y %k:%M").hour
-    puts "#{name} #{time}"
-    registers_per_hour[time] = (registers_per_hour[time] || 0) + 1
+    time = Time.strptime(row[:regdate], "%m/%d/%y %k:%M")
+    hour = time.hour
+    weekday = time.strftime("%A")
+    registers_per_hour[hour] = (registers_per_hour[hour] || 0) + 1
+    registers_per_weekday[weekday] = (registers_per_weekday[weekday] || 0) + 1
   end
 end
 
-# puts numbers_for_alerts
+p numbers_for_alerts
 puts registers_per_hour.sort_by(&:last).reverse.to_h
+puts registers_per_weekday.sort_by(&:last).reverse.to_h
