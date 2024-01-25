@@ -3,6 +3,7 @@
 require "csv"
 require "google/apis/civicinfo_v2"
 require "erb"
+require "time"
 
 def clean_zipcodes(zipcode)
   zipcode.to_s.rjust(5, "0")[0..4]
@@ -43,6 +44,7 @@ end
 puts "EventManager initalized"
 
 numbers_for_alerts = []
+registers_per_hour = {}
 
 if File.exist? "event_attendees.csv"
   contents = CSV.open("event_attendees.csv", headers: true, header_converters: :symbol)
@@ -52,12 +54,16 @@ if File.exist? "event_attendees.csv"
     id = row[0]
     name = row[:first_name]
     zipcode = clean_zipcodes(row[:zipcode])
-    legislators = legislators_by_zipcode(zipcode)
-    results = template.result(binding)
-    save_thank_you_letter(id, results)
+    # legislators = legislators_by_zipcode(zipcode)
+    # results = template.result(binding)
+    # save_thank_you_letter(id, results)
     phone = clean_phone_number(row[:homephone])
     numbers_for_alerts.push(phone) unless phone == "Invalid Phone Number"
+    time = Time.strptime(row[:regdate], "%m/%d/%Y %k:%M").hour
+    puts "#{name} #{time}"
+    registers_per_hour[time] = (registers_per_hour[time] || 0) + 1
   end
 end
 
-puts numbers_for_alerts
+# puts numbers_for_alerts
+puts registers_per_hour.sort_by(&:last).reverse.to_h
